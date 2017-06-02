@@ -16,7 +16,7 @@ from influxdb.client import InfluxDBClientError
 
 USER = 'admin'
 PASSWORD = 'admin'
-DBNAME = 'tutorial'
+DBNAME = 'trading'
 
 from influxdb import SeriesHelper
 
