@@ -20,18 +20,39 @@ DBNAME = 'tutorial'
 
 from influxdb import SeriesHelper
 
-class OptiqSeriesHelper(SeriesHelper):
+modules = {"member"  : "member",
+           "oeg"     : "oeg",
+           "me"      : "me",
+           "me_book" : "me_book",
+           "me_mdb"  : "me_mdb",
+           "mdp"     : "mdp" }
+
+mways = {"in"  : "in",
+         "out" : "out" }
+
+mtypes = {"latency" : "latency" ,
+          "elapse"  : "elapse" }
+
+
+class TCSeriesHelper(SeriesHelper):
     class Meta:
-        series_name = 'trading_chain'
+        series_name = 'tc'
         fields = ['duration']
-        tags = ['member_id', 'oeg_id', 'step']
+        tags = [ 'mname', 'mid', 'mway', 'mtype' ]
         
+def get_time_ns():
+    elapse = time.time() + time.perf_counter() 
+    return int(elapse * 1000000000)
+
+def create_point(m_name, m_id, m_way, m_type, value):
+    tt =  get_time_ns()
+    TCSeriesHelper(mname=m_name, mid=m_id, mway=m_way, mtype=m_type, duration=value, time=tt)
+    
 def main(host='localhost', port=8086, nb_day=15):
 
-    nb_day = 15  # number of day to generate time series
-    timeinterval_min = 5  # create an event every x minutes
-    total_minutes = 1440 * nb_day
-    total_records = int(total_minutes / timeinterval_min)
+    nb_points_per_oe = 10  # number of points per order entry
+    bulk_commit = 5000  # number of insert before committing 
+    total_records = int(bulk_commit / nb_points_per_oe)
 
     client = InfluxDBClient(host, port, USER, PASSWORD, DBNAME)
 
@@ -47,19 +68,45 @@ def main(host='localhost', port=8086, nb_day=15):
     retention_policy = 'server_data'
     client.create_retention_policy(retention_policy, '3d', 3, default=True)
 
-
-    t0 = time.perf_counter()
     for i in range(0, total_records):
-        elapse = time.time() + time.perf_counter() 
-        tt=int(elapse * 1000000000)
-        step='oeg_latency_in'
+        
         duration=random.randint(12, 120)
-        member_id = "member-%d" % random.randint(1, 5)
-        oeg_id = "oeg-%d" % random.randint(1, 3)
-        OptiqSeriesHelper(member_id=member_id, oeg_id=oeg_id, step=step, duration=duration, time=tt)
-        print("Last point at: {0}".format(tt))
+        member_id = "member-%d" % random.randint(1, 50)
+        segment = random.randint(1, 3)
+        oeg_id = "oeg-%d" % segment
+        me_id = "me-%d" % segment
+        mdp_id = "mdp-%d" % random.randint(1, 5)
+        
+        create_point(modules['member'], member_id, mways['in'], mtypes['latency'], duration)
+        
+        duration=random.randint(12, 120)
+        create_point(modules['oeg'], oeg_id, mways['in'], mtypes['elapse'], duration)
+        
+        duration=random.randint(12, 120)
+        create_point(modules['me'], me_id, mways['in'], mtypes['latency'], duration)
+        
+        duration=random.randint(12, 120)
+        create_point(modules['me_book'], me_id, mways['in'], mtypes['elapse'], duration)
+        
+        duration=random.randint(12, 120)
+        create_point(modules['me_mdb'], me_id, mways['in'], mtypes['latency'], duration)
+        
+        duration=random.randint(12, 120)
+        create_point(modules['me_mdb'], me_id, mways['in'], mtypes['elapse'], duration)
+        
+        duration=random.randint(12, 120)
+        create_point(modules['mdp'], mdp_id, mways['in'], mtypes['latency'], duration)
+        
+        duration=random.randint(12, 120)
+        create_point(modules['mdp'], mdp_id, mways['in'], mtypes['elapse'], duration)
+        
+        duration=random.randint(12, 120)
+        create_point(modules['oeg'], oeg_id, mways['out'], mtypes['latency'], duration)
+        
+        duration=random.randint(12, 120)
+        create_point(modules['oeg'], oeg_id, mways['out'], mtypes['elapse'], duration)
     
-    OptiqSeriesHelper.commit(client)
+    TCSeriesHelper.commit(client)
     
     print("Write points #: {0}".format(total_records))
 
