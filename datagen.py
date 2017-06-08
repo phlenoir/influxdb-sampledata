@@ -63,7 +63,7 @@ Goal
   - Automatically delete the raw, nano-second resolution data that are older than 1 hour
   - Automatically delete the 1-second resolution data that are older than 2 hours
 '''
-def main(host='localhost', port=8086):
+def main(host='localhost', port=8086, max_time=10):
 
     nb_points_per_oe = 10  # number of points per order entry
     bulk_commit = 5000  # number of insert before committing 
@@ -114,48 +114,50 @@ def main(host='localhost', port=8086):
         client.query('DROP CONTINUOUS QUERY member_latency_in_1s on {0}'.format(DBNAME))
         client.query(query_string)
         
-
-    for i in range(0, total_records):
+    # now we'll run for sometime, pushing data into influxdb
+    start_time = time.time()  # remember when we started
+    while (time.time() - start_time) < max_time:
+        for i in range(0, total_records):
+            
+            duration=random.randint(12, 120)
+            member_id = "member-%d" % random.randint(1, 50)
+            segment = random.randint(1, 3)
+            oeg_id = "oeg-%d" % segment
+            me_id = "me-%d" % segment
+            mdp_id = "mdp-%d" % random.randint(1, 5)
+            
+            create_point(modules['member'], member_id, mways['in'], mtypes['latency'], duration)
+            
+            duration=random.randint(12, 120)
+            create_point(modules['oeg'], oeg_id, mways['in'], mtypes['elapse'], duration)
+            
+            duration=random.randint(12, 120)
+            create_point(modules['me'], me_id, mways['in'], mtypes['latency'], duration)
+            
+            duration=random.randint(12, 120)
+            create_point(modules['me_book'], me_id, mways['in'], mtypes['elapse'], duration)
+            
+            duration=random.randint(12, 120)
+            create_point(modules['me_mdb'], me_id, mways['in'], mtypes['latency'], duration)
+            
+            duration=random.randint(12, 120)
+            create_point(modules['me_mdb'], me_id, mways['in'], mtypes['elapse'], duration)
+            
+            duration=random.randint(12, 120)
+            create_point(modules['mdp'], mdp_id, mways['in'], mtypes['latency'], duration)
+            
+            duration=random.randint(12, 120)
+            create_point(modules['mdp'], mdp_id, mways['in'], mtypes['elapse'], duration)
+            
+            duration=random.randint(12, 120)
+            create_point(modules['oeg'], oeg_id, mways['out'], mtypes['latency'], duration)
+            
+            duration=random.randint(12, 120)
+            create_point(modules['oeg'], oeg_id, mways['out'], mtypes['elapse'], duration)
         
-        duration=random.randint(12, 120)
-        member_id = "member-%d" % random.randint(1, 50)
-        segment = random.randint(1, 3)
-        oeg_id = "oeg-%d" % segment
-        me_id = "me-%d" % segment
-        mdp_id = "mdp-%d" % random.randint(1, 5)
+        TCSeriesHelper.commit(client)
         
-        create_point(modules['member'], member_id, mways['in'], mtypes['latency'], duration)
-        
-        duration=random.randint(12, 120)
-        create_point(modules['oeg'], oeg_id, mways['in'], mtypes['elapse'], duration)
-        
-        duration=random.randint(12, 120)
-        create_point(modules['me'], me_id, mways['in'], mtypes['latency'], duration)
-        
-        duration=random.randint(12, 120)
-        create_point(modules['me_book'], me_id, mways['in'], mtypes['elapse'], duration)
-        
-        duration=random.randint(12, 120)
-        create_point(modules['me_mdb'], me_id, mways['in'], mtypes['latency'], duration)
-        
-        duration=random.randint(12, 120)
-        create_point(modules['me_mdb'], me_id, mways['in'], mtypes['elapse'], duration)
-        
-        duration=random.randint(12, 120)
-        create_point(modules['mdp'], mdp_id, mways['in'], mtypes['latency'], duration)
-        
-        duration=random.randint(12, 120)
-        create_point(modules['mdp'], mdp_id, mways['in'], mtypes['elapse'], duration)
-        
-        duration=random.randint(12, 120)
-        create_point(modules['oeg'], oeg_id, mways['out'], mtypes['latency'], duration)
-        
-        duration=random.randint(12, 120)
-        create_point(modules['oeg'], oeg_id, mways['out'], mtypes['elapse'], duration)
-    
-    TCSeriesHelper.commit(client)
-    
-    print("Write points #: {0}".format(total_records))
+        print("Write points #: {0}".format(total_records))
 
 
 def parse_args():
@@ -165,9 +167,11 @@ def parse_args():
                         help='hostname influxdb http API')
     parser.add_argument('--port', type=int, required=False, default=8086,
                         help='port influxdb http API')
+    parser.add_argument('--sec', type=int, required=False, default=300,
+                        help='amount of seconds we will be pushing data to influxdb')
     return parser.parse_args()
 
 
 if __name__ == '__main__':
     args = parse_args()
-    main(host=args.host, port=args.port)
+    main(host=args.host, port=args.port, max_time=args.sec)
