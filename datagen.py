@@ -10,36 +10,27 @@ import argparse
 import random
 import time
 from datetime import datetime
-
-from influxdb import InfluxDBClient
-from influxdb.client import InfluxDBClientError
+import uuid
+import socket
 
 UTCOFFSET = 3600*2
 USER = 'admin'
 PASSWORD = 'admin'
 DBNAME = 'trading'
 
-from influxdb import SeriesHelper
-
-modules = {"member"  : "member",
-           "oeg"     : "oeg",
-           "me"      : "me",
-           "me_book" : "me_book",
-           "me_mdb"  : "me_mdb",
-           "mdp"     : "mdp" }
-
-mways = {"in"  : "in",
-         "out" : "out" }
-
-mtypes = {"latency" : 'latency' ,
-          "elapse"  : 'elapse' }
-
-
-class TCSeriesHelper(SeriesHelper):
-    class Meta:
-        series_name = 'tc'
-        fields = ['duration']
-        tags = [ 'mname', 'mid', 'mway', 'mtype' ]
+'''
+    Time series:
+    - OE : order entry characterized by segment, partition, logical core, instrument
+           Because overall tag number matters, we limit cardinality by not including order id in the tag list
+           
+    Data:
+    - 1000 instruments belonging to 2 partitions in the same segment
+    - instrument number 0 to 499 are in the first partition
+    - instrument number 500 to 999 are in the second partition
+    - each partition has 2 logical cores
+    - even numbers go to lc 1
+    - odd numbers go to lc 2
+'''
         
 def get_time_ns():
     # always use UTC time with InfluxDB
@@ -47,16 +38,35 @@ def get_time_ns():
     elapse = time.mktime(now.timetuple()) + UTCOFFSET + now.microsecond / 1E6 + time.perf_counter() 
     return int(elapse * 1000000000)
 
-def create_point(m_name, m_id, m_way, m_type, value):
-    tt =  get_time_ns()
-    TCSeriesHelper(mname=m_name, mid=m_id, mway=m_way, mtype=m_type, duration=value, time=tt)
-
+def create_point(measurement, membid, oid, segid, instid, server_address, sock):
+    
+    tstamp = get_time_ns()
+    
+    instrid = "instr-%d" % instid
+    if instid < 500:
+        partid = "p1"
+    else:
+        partid = "p2"
+    if instid % 2 == 0:
+        lcid = "%s-lc1" % partid
+    else:
+        lcid = "%s-lc2" % partid
+        
+    tt = get_time_ns()
+    latency = tt - tstamp
+    
+    # use InfluxDB line protocol
+    # see https://docs.influxdata.com/influxdb/v1.2/write_protocols/line_protocol_reference/#data-types
+    message = '%s,member="%s",segment="%s",partition="%s",lc="%s",instrument="%s",oid="%s" value=%di %d' % (measurement, membid, segid, partid, lcid, instrid, oid, tt, tt)
+    #print(message)
+    sent = sock.sendto(message.encode(encoding='utf_8', errors='strict'), server_address)
     
 '''
 Sample data: generate pseudo trading data with nano-second precision
-  - 1 order entry generates 10 metrics messages
+  - 1 order entry generates n points of measure
+  - the difference of two consecutive points measure a transit time
+  - each transit time collection makes a time series
   - commit every 5000 points (i.e. every 500 order entries)
-  
   
 Goal
   - Automatically aggregate the nano-second resolution data 
@@ -65,100 +75,31 @@ Goal
 '''
 def main(host='localhost', port=8086, max_time=10):
 
-    nb_points_per_oe = 10  # number of points per order entry
-    bulk_commit = 5000  # number of insert before committing 
+    nb_points_per_oe = 2  # number of points per order entry
+    bulk_commit = 1000  # number of insert before committing 
     total_records = int(bulk_commit / nb_points_per_oe)
+    
+    # Create a UDP socket
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_address = ('localhost', 9100)
 
-    client = InfluxDBClient(host, port, USER, PASSWORD, DBNAME)
-
-    print("Create database: " + DBNAME)
-    try:
-        client.create_database(DBNAME)
-    except InfluxDBClientError:
-        print("Dropping old database first")
-        client.drop_database(DBNAME)
-        client.create_database(DBNAME)
-
-    print("Create a 1d default retention policy for unit values")
-    rp = 'rp_unit'
-    try:
-        client.create_retention_policy(rp, '1d', 1, default=True)
-    except InfluxDBClientError:
-        print("Dropping old RP first")
-        client.query('DROP RETENTION POLICY {0} on {1}'.format(rp, DBNAME))
-        client.create_retention_policy(rp, '1d', 1, default=True)
-        
-    print("Create a 2d retention policy for aggregated values")
-    rp = 'rp_agg'
-    try:
-        client.create_retention_policy(rp, '2d', 1, default=False)
-    except InfluxDBClientError:
-        print("Dropping old RP first")
-        client.query('DROP RETENTION POLICY {0} on {1}'.format(rp, DBNAME))
-        client.create_retention_policy(rp, '2d', 1, default=False)
-       
-    print("Create a continuous query")
-    query_string = 'CREATE CONTINUOUS QUERY "member_latency_in_1s" ON {0} BEGIN '\
-                   'SELECT mean("duration") AS "mean_member_latency_in" '\
-                   'INTO rp_agg.member_agg_1s '\
-                   'FROM "tc" '\
-                   'WHERE mtype={1} '\
-                   'AND mname={2} '\
-                   'AND mway={3} '\
-                   'GROUP BY time(1s), "mid" '\
-                   'END'.format( DBNAME, "'latency'", "'member'", "'in'") 
-    try:
-        client.query(query_string)
-    except InfluxDBClientError:
-        print("Dropping old CQ first")
-        client.query('DROP CONTINUOUS QUERY member_latency_in_1s on {0}'.format(DBNAME))
-        client.query(query_string)
-        
     # now we'll run for sometime, pushing data into influxdb
     start_time = time.time()  # remember when we started
     while (time.time() - start_time) < max_time:
         for i in range(0, total_records):
-            
-            duration=random.randint(12, 120)
-            member_id = "member-%d" % random.randint(1, 50)
-            segment = random.randint(1, 3)
-            oeg_id = "oeg-%d" % segment
-            me_id = "me-%d" % segment
-            mdp_id = "mdp-%d" % random.randint(1, 5)
-            
-            create_point(modules['member'], member_id, mways['in'], mtypes['latency'], duration)
-            
-            duration=random.randint(12, 120)
-            create_point(modules['oeg'], oeg_id, mways['in'], mtypes['elapse'], duration)
-            
-            duration=random.randint(12, 120)
-            create_point(modules['me'], me_id, mways['in'], mtypes['latency'], duration)
-            
-            duration=random.randint(12, 120)
-            create_point(modules['me_book'], me_id, mways['in'], mtypes['elapse'], duration)
-            
-            duration=random.randint(12, 120)
-            create_point(modules['me_mdb'], me_id, mways['in'], mtypes['latency'], duration)
-            
-            duration=random.randint(12, 120)
-            create_point(modules['me_mdb'], me_id, mways['in'], mtypes['elapse'], duration)
-            
-            duration=random.randint(12, 120)
-            create_point(modules['mdp'], mdp_id, mways['in'], mtypes['latency'], duration)
-            
-            duration=random.randint(12, 120)
-            create_point(modules['mdp'], mdp_id, mways['in'], mtypes['elapse'], duration)
-            
-            duration=random.randint(12, 120)
-            create_point(modules['oeg'], oeg_id, mways['out'], mtypes['latency'], duration)
-            
-            duration=random.randint(12, 120)
-            create_point(modules['oeg'], oeg_id, mways['out'], mtypes['elapse'], duration)
-        
-        TCSeriesHelper.commit(client)
-        
+            membid = "member-%d" % random.randint(1, 10)
+            oid = "order-%d" % uuid.uuid1()
+            segid="PAR"
+            instid = random.randint(0, 999)
+            create_point("oeg.order-in.sample", membid, oid, segid, instid, server_address, sock)
+            create_point("oeg.order-out.sample", membid, oid, segid, instid, server_address, sock)
+ 
         print("Write points #: {0}".format(total_records))
-
+        time.sleep(0.1)
+        
+    sock.close()
+       
+    print("End of data stream")
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -167,7 +108,7 @@ def parse_args():
                         help='hostname influxdb http API')
     parser.add_argument('--port', type=int, required=False, default=8086,
                         help='port influxdb http API')
-    parser.add_argument('--sec', type=int, required=False, default=300,
+    parser.add_argument('--sec', type=int, required=False, default=30,
                         help='amount of seconds we will be pushing data to influxdb')
     return parser.parse_args()
 
