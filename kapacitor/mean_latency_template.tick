@@ -1,0 +1,27 @@
+var measurement string
+// Optional where filter
+var where_filter = lambda: TRUE
+// Optional list of group by dimensions
+var groups = [*]
+// Which field to process
+var field string
+// How much data to window (default to 1s)
+var window = 1s
+// Output result to a new series
+var new_measurement string
+
+stream
+    |from()
+        .measurement(measurement)
+        .where(where_filter)
+        .groupBy(groups)
+    |window()
+        .period(window)
+        .every(window)
+    |mean(field)
+        .as('value')
+    |influxDBOut()
+        .database('trading')
+        .retentionPolicy('rp_agg')
+        .measurement(new_measurement)
+

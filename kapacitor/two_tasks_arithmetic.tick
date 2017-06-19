@@ -1,0 +1,27 @@
+// Get incomming message timestamp stream data
+var incomming = stream
+    |from()
+        .measurement('oeg.order-in.sample')
+        .groupBy(*)
+
+// Get outgoing message timestamp stream data
+var outgoing = stream
+    |from()
+        .measurement('oeg.order-out.sample')
+        .groupBy(*)
+
+// Join incomming messages and outgoing messages
+outgoing
+    |join(incomming)
+        .as('outgoing', 'incomming')
+        .tolerance(1ms)
+    //Calculate latency
+    |eval(lambda: "outgoing.value" - "incomming.value")
+        // Give the resulting field a name
+        .as('value')
+    |influxDBOut()
+        .database('trading')
+        .retentionPolicy('rp_unit')
+        .measurement('oeg.latency.sample')
+        .precision('ns')
+
