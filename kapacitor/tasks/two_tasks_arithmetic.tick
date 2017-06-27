@@ -14,7 +14,7 @@ var outgoing = stream
 outgoing
     |join(incomming)
         .as('outgoing', 'incomming')
-        .tolerance(1ms)
+        .tolerance(10ms)
     //Calculate latency
     |eval(lambda: "outgoing.value" - "incomming.value")
         // Give the resulting field a name
