@@ -12,7 +12,7 @@ import time
 from datetime import datetime
 import uuid
 import socket
-from monotonic import monotonic
+import monotonic
 
 UTCOFFSET = 3600*2
 USER = 'admin'
@@ -36,7 +36,7 @@ DBNAME = 'trading'
 def get_time_ns():
     # always use UTC time with InfluxDB
     now = datetime.utcnow() 
-    elapse = time.mktime(now.timetuple()) + UTCOFFSET + now.microsecond / 1E6 + monotonic() 
+    elapse = time.mktime(now.timetuple()) + UTCOFFSET + now.microsecond / 1E6 + monotonic.monotonic()
     return int(elapse * 1000000000)
 
 def create_point(measurement, membid, oid, segid, instid, server_address, sock):
