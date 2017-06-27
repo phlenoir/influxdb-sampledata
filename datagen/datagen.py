@@ -12,9 +12,9 @@ import time
 from datetime import datetime
 import uuid
 import socket
-import monotonic
+import sys
 
-UTCOFFSET = 3600*2
+UTCOFFSET = 0 #3600*2
 USER = 'admin'
 PASSWORD = 'admin'
 DBNAME = 'trading'
@@ -22,7 +22,6 @@ DBNAME = 'trading'
 '''
     Time series:
     - OE : order entry characterized by segment, partition, logical core, instrument
-           Because overall tag number matters, we limit cardinality by not including order id in the tag list
            
     Data:
     - 1000 instruments belonging to 2 partitions in the same segment
@@ -32,17 +31,19 @@ DBNAME = 'trading'
     - even numbers go to lc 1
     - odd numbers go to lc 2
 '''
-        
+nano = 0        
 def get_time_ns():
     # always use UTC time with InfluxDB
     now = datetime.utcnow() 
-    elapse = time.mktime(now.timetuple()) + UTCOFFSET + now.microsecond / 1E6 + monotonic.monotonic()
-    return int(elapse * 1000000000)
+    # simulate latency (no time.perf_counter() in python 2)
+    global nano
+    nano += random.randint(1, 99999)
+    #print("nano: %d" % nano)
+    # UTCOFFSET not needed since target node is on zulu time
+    elapse = time.mktime(now.timetuple()) + UTCOFFSET + now.microsecond / 1E6
+    return int(elapse * 1E9 + nano)
 
-def create_point(measurement, membid, oid, segid, instid, server_address, sock):
-    
-    tstamp = get_time_ns()
-    
+def create_point(measurement, membid, oid, segid, instid, server_address, sock):    
     instrid = "instr-%d" % instid
     if instid < 500:
         partid = "p1"
@@ -54,8 +55,6 @@ def create_point(measurement, membid, oid, segid, instid, server_address, sock):
         lcid = "%s-lc2" % partid
         
     tt = get_time_ns()
-    latency = tt - tstamp
-    
     # use InfluxDB line protocol
     # see https://docs.influxdata.com/influxdb/v1.2/write_protocols/line_protocol_reference/#data-types
     message = '%s,member="%s",segment="%s",partition="%s",lc="%s",instrument="%s",oid="%s" value=%di %d' % (measurement, membid, segid, partid, lcid, instrid, oid, tt, tt)
@@ -67,7 +66,6 @@ Sample data: generate pseudo trading data with nano-second precision
   - 1 order entry generates n points of measure
   - the difference of two consecutive points measure a transit time
   - each transit time collection makes a time series
-  - commit every 5000 points (i.e. every 500 order entries)
   
 Goal
   - Automatically aggregate the nano-second resolution data 
@@ -77,7 +75,7 @@ Goal
 def main(host='localhost', port=8086, max_time=10):
 
     nb_points_per_oe = 2  # number of points per order entry
-    bulk_commit = 1000  # number of insert before committing 
+    bulk_commit = 10  # number of insert before committing 
     total_records = int(bulk_commit / nb_points_per_oe)
     
     # Create a UDP socket
@@ -95,12 +93,14 @@ def main(host='localhost', port=8086, max_time=10):
             create_point("oeg.order-in.sample", membid, oid, segid, instid, server_address, sock)
             create_point("oeg.order-out.sample", membid, oid, segid, instid, server_address, sock)
  
-        print("Write points #: {0}".format(total_records))
-        time.sleep(0.1)
+        #print("Write points #: {0}".format(total_records))
+        time.sleep(0.001)
+        global nano
+        nano = 0
         
     sock.close()
        
-    print("End of data stream")
+    print("End of data stream on %s" % sys.platform)
 
 def parse_args():
     parser = argparse.ArgumentParser(
