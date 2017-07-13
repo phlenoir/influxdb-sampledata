@@ -1,0 +1,16 @@
+{
+  "uploadOnSave": true,
+  "useAtomicWrites": false,
+  "deleteLocal": false,
+  "hostname": "qpdpecon24101-int",
+  "port": "22",
+  "target": "/app/influxdb",
+  "ignore": [
+    ".remote-sync.json",
+    ".git/**"
+  ],
+  "username": "opcon",
+  "keyfile": "I:\\optqa_rsa",
+  "watch": [],
+  "transport": "scp"
+}

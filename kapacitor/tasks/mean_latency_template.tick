@@ -24,4 +24,3 @@ stream
         .database('trading')
         .retentionPolicy('rp_agg')
         .measurement(new_measurement)
-

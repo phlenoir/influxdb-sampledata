@@ -5,4 +5,3 @@
     "window": {"type" : "duration", "value" : "1s" },
     "new_measurement": {"type" : "string", "value" : "oeg.latency.mean.measure" }
 }
-

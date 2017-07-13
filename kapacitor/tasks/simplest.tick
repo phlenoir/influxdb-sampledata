@@ -1,0 +1,13 @@
+// Get a stream of data
+var tor_out = stream
+    |from()
+        .measurement('oeg.tor-out.sample')
+        .groupBy(*)
+
+// Send it to InfluxDB
+tor_out
+    |influxDBOut()
+        .database('trading')
+        .retentionPolicy('rp_unit')
+        .measurement('simplest')
+        .precision('ns')

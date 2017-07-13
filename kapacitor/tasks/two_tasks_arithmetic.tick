@@ -1,22 +1,22 @@
-// Get incomming message timestamp stream data
-var incomming = stream
+// Get ack out stream of data
+var ack_out = stream
     |from()
-        .measurement('oeg.order-in.sample')
+        .measurement('oeg.ack-out.sample')
         .groupBy(*)
 
-// Get outgoing message timestamp stream data
-var outgoing = stream
+// Get tor out stream of data
+var tor_out = stream
     |from()
-        .measurement('oeg.order-out.sample')
+        .measurement('oeg.tor-out.sample')
         .groupBy(*)
 
 // Join incomming messages and outgoing messages
-outgoing
-    |join(incomming)
-        .as('outgoing', 'incomming')
+tor_out
+    |join(ack_out)
+        .as('tor_out', 'ack_out')
         .tolerance(10ms)
     //Calculate latency
-    |eval(lambda: "outgoing.value" - "incomming.value")
+    |eval(lambda: "tor_out.tor_out" - "ack_out.oeg_in")
         // Give the resulting field a name
         .as('value')
     |influxDBOut()
@@ -24,4 +24,3 @@ outgoing
         .retentionPolicy('rp_unit')
         .measurement('oeg.latency.sample')
         .precision('ns')
-

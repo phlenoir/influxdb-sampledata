@@ -13,8 +13,8 @@ from datetime import datetime
 import uuid
 import socket
 import sys
-import csv
 import os
+import ast
 
 UTCOFFSET = 0 #3600*2
 USER = 'admin'
@@ -23,25 +23,22 @@ DBNAME = 'trading'
 
 '''
     Time series:
-    - OE : order entry characterized by segment, partition, logical core, instrument
-
-    Data:
-    - 1000 instruments belonging to 2 partitions in the same segment
-    - instrument number 0 to 499 are in the first partition
-    - instrument number 500 to 999 are in the second partition
-    - each partition has 2 logical cores
-    - even numbers go to lc 1
-    - odd numbers go to lc 2
+    - order entry characterized by segment, partition, logical core, instrument
+    - Member characterized by their id and ip
 '''
-ip_address = {}
+member = []
+instrument = []
 def load_samples(path):
-    global ip_address
-    for line in csv.reader(open(os.path.join(path, 'samples/ip_address.sample'), "rb")):
-        if line[0][0] == "#":
-            continue
-        ip_address[line[0]] = line[1] if len(line) == 2 else line[1:]
-    for k, v in ip_address.iteritems():
-        print (k, v)
+    global member
+    with open(os.path.join(path, 'samples/member.sample'), "rb") as f:
+        for line in f:
+            member.append(eval(line))
+
+    global instrument
+    with open(os.path.join(path, 'samples/instrument.sample'), "rb") as f:
+        for line in f:
+            instrument.append(eval(line))
+
 
 nano = 0
 def get_time_ns():
@@ -71,23 +68,19 @@ def create_point(measurement, tags, values, server_address, sock):
         sep = ','
     tt = get_time_ns()
     message+=' %d' % tt
-    #print(message)
     sent = sock.sendto(message.encode(encoding='utf_8', errors='strict'), server_address)
+    #print("Sent {} bytes: {}".format(sent, message))
 
 '''
 Sample data: generate pseudo trading data with nano-second precision timestamps
   - 1 order entry generates n points of measure
-  - the difference of two consecutive points measure a transit time
+  - the difference of two  points measure a transit time
   - each transit time collection makes a time series
-
-Goal
-  - Automatically aggregate the nano-second resolution data
-  - Automatically delete the raw, nano-second resolution data that are older than 1 hour
-  - Automatically delete the 1-second resolution data that are older than 2 hours
 '''
 def main(host='localhost', port=8089, max_time=10, rate=1000, sampling=10):
     # we have 2 points of measure
     nb_points = 2
+    # no less than 100 points between 2 commits
     sliced = max(100, int(rate / (sampling*nb_points)))
 
     # Create a UDP socket
@@ -97,7 +90,6 @@ def main(host='localhost', port=8089, max_time=10, rate=1000, sampling=10):
     # now we'll run for sometime, pushing data into influxdb
     start_time = time.time()  # remember when we started
     tags=dict()
-    tags['segment'] = "EQU"
     ackpoints=dict()
     torpoints=dict()
     while (time.time() - start_time) < max_time:
@@ -105,18 +97,10 @@ def main(host='localhost', port=8089, max_time=10, rate=1000, sampling=10):
         this_count = 0
         while 1:
             for i in range(0, sliced):
-                tags['member'], tags['ip'] = random.choice(list(ip_address.items()))
+                tags = random.choice(member)
+                tags.update( random.choice(instrument) )
                 tags['oid'] = "order-%d" % uuid.uuid1()
-                instid = random.randint(0, 999)
-                tags['instrument'] = "instr-%d" % instid
-                if instid < 500:
-                    tags['partition'] = "p1"
-                else:
-                    tags['partition'] = "p2"
-                if instid % 2 == 0:
-                    tags['lc'] = "lc1"
-                else:
-                    tags['lc'] = "lc2"
+
                 torpoints['tor_in'] = get_time_ns()
                 ackpoints['oeg_in'] = get_time_ns()
                 ackpoints['oeg_out'] = get_time_ns()
@@ -126,11 +110,8 @@ def main(host='localhost', port=8089, max_time=10, rate=1000, sampling=10):
                 ackpoints['ack_out'] = get_time_ns()
                 torpoints['tor_out'] = get_time_ns()
 
-                create_point("oeg.ack.sample", tags, ackpoints, server_address, sock)
-                del tags['lc']
-                tags['laid'] = "laid-{}-{}".format(tags['member'], tags['partition'])
-                create_point("oeg.tor.sample", tags, torpoints, server_address, sock)
-                del tags['laid']
+                create_point("oeg.ack-out.sample", tags, ackpoints, server_address, sock)
+                create_point("oeg.tor-out.sample", tags, torpoints, server_address, sock)
                 this_count +=2
             elapse = time.time() - this_time
             real_rate = this_count/elapse
