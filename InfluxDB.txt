@@ -2,13 +2,13 @@ POC InfluxDB / Kapacitor
 
 Connexion
 
-Avec putty sur la machine relais 
+Avec putty sur la machine relais
 host : da2svtst04v-int.devqa.exch.int
 user : jposcente
 private key : sur le bureau
 
-Puis ssh sur 
-qpdpecon24101-int  
+Puis ssh sur
+qpdpecon24101-int
 qpdpecon24102-int
 qpdpecon24103-int
 
@@ -30,7 +30,7 @@ accès sudo Su
 # Générer la clé ==> à mettre dans le fichier ini
 cntlm -H -d OAD -u plenoir
 # Démarrer
-cntlm -c "C:\Users\plenoir\Desktop\cntlm-0.92.3\cntlm.ini" 
+cntlm -c "C:\Users\plenoir\Desktop\cntlm-0.92.3\cntlm.ini"
 ./cntlm.exe -c cntlm.ini
 
 # Configurer git pour passer par le proxy cntlm

@@ -11,3 +11,11 @@ The second task is a stream task working on the InfluxDB measurement to compute 
 
 ## Simulate data producer
 * run `python datagen/datagen.py` to generate a stream of data on UDP port 9100 using the InfluxDB line protocol, understood by Kapacitor. By default the script will run for 30s with a 0.1 second pause every 500 messages.
+
+
+# Tuning
+Optimized paramters
+
+## System
+* UDP buffer size monitor
+while(true); do netstat -unlp | grep 8089 ; sleep 1; done
