@@ -10,7 +10,7 @@ TEST_SUITE_NAME="Initialize Kapacitor"
 TOTAL_TESTS=7
 
 
-${KAPACITOR_BIN} ${KAPACITOR_OPT} define simplest -tick ${BASEDIR}/kapacitor/tasks/simplest.tick -type stream -dbrp trading.rp_unit
+${KAPACITOR_BIN} ${KAPACITOR_OPT} define simplest -tick ${KAPACITOR_TICKDIR}/simplest.tick -type stream -dbrp trading.rp_unit
 assert_ran_ok "define simplest"
 ${KAPACITOR_BIN} ${KAPACITOR_OPT} enable simplest
 assert_ran_ok "enable simplest"

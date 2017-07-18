@@ -10,8 +10,8 @@ TEST_SUITE_NAME="Check Kapacitor"
 TOTAL_TESTS=2
 
 OF_PREFIX="${0%.sh}" # Expands to './01-foo-test'
-curl -sl -I ${KAPACITOR_REST_ENDPOINT}/kapacitor/v1/ping | head -1 | tee $OF_PREFIX-1.out
-assert_ran_ok "${INFLUXDB_REST_ENDPOINT}/kapacitor/v1/ping"
+curl -sl -I ${KAPACITOR_URL}/kapacitor/v1/ping | head -1 | tee $OF_PREFIX-1.out
+assert_ran_ok "${KAPACITOR_URL}/kapacitor/v1/ping"
 assert 'Kapacitor REST API returned 204' \
   'diff -u $OF_PREFIX-1.cmp $OF_PREFIX-1.out'
 

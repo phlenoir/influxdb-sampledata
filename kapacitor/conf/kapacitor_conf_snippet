@@ -1,7 +1,0 @@
-# enable udp listener
-[[udp]]
-    enabled = true
-    bind-address = ":9100"
-    database = "trading"
-    retention-policy = "rp_unit"
-

@@ -10,8 +10,8 @@ TEST_SUITE_NAME="Check InfluxDB"
 TOTAL_TESTS=2
 
 OF_PREFIX="${0%.sh}" # Expands to './01-foo-test'
-curl -sl -I ${INFLUXDB_REST_ENDPOINT}/ping | head -1 | tee $OF_PREFIX-1.out
-assert_ran_ok "${INFLUXDB_REST_ENDPOINT}/ping"
+curl -sl -I ${INFLUXDB_URL}/ping | head -1 | tee $OF_PREFIX-1.out
+assert_ran_ok "${INFLUXDB_URL}/ping"
 assert 'InfluxDB returned 204' \
   'diff -u $OF_PREFIX-1.cmp $OF_PREFIX-1.out'
 
