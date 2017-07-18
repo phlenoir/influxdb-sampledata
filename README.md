@@ -1,21 +1,42 @@
 # influxdb-sampledata
-Generate sample data into an Influxdb dabase
+Simple testing framework Generate sample data into an Influxdb dabase
 
-## Initialize the tool set
-* run `./influxdb/init_influxdb.bash` to create the data base and the retention policies
-* run `./kapacitor/init_kapacitor.bash` to create 2 Kapacitor tasks
+## Basics
+* `all_tests.sh` will go through each test in turn
+* `01-something-test.sh` will run one test script individually
+* `test.sh` a helper menu to pick-up test scripts to run
+* `test_setup.sh` contains variables that should be adjusted to the environment
+* `clean.sh` will remove any `.log` and `.out` files generated during tests
 
-The first task will listen on UDP port 9100 to capture 2 streams of messages containing timestamps. The 2 streams are joined together to produce an Influxdb measurement of the latency (i.e. the diff between the 2 timestamps).
+## Initialize the testing environment
+* Install Influxdb, use test #01 to check installation
+* Initialize InfluxDB with test #02 to create database, retention policies, etc.
+* Install Kapacitor, use test #03 to check installation
+* Initialize Kapacitor tasks with test #03
+* Run any of the performance test (tests #05 #06 etc.)
 
-The second task is a stream task working on the InfluxDB measurement to compute the mean of the latency per 1-second bucket.
+## Details about performance tests
+### Test #05
+Two streams of data are sent to the InfluxDB UDP end-point which automatically insert points in the DB.
+    InfluxDB shell version: 1.2.4
+    > use trading
+    Using database trading
+    > show measurements
+    name: measurements
+    name
+    ----
+    oeg.ack-out.sample
+    oeg.tor-out.sample
 
-## Simulate data producer
-* run `python datagen/datagen.py` to generate a stream of data on UDP port 9100 using the InfluxDB line protocol, understood by Kapacitor. By default the script will run for 30s with a 0.1 second pause every 500 messages.
+### Tets #06
+Two streams of data are sent to the Kapacitor UDP end-point. A first Kapacitor task will capture these two streams and join them together to produce an Influxdb measurement of the latency (i.e. the diff between the 2 timestamps). A second Kapacitor task is streaming the InfluxDB measurement to compute the mean of the latency per 1-second bucket.
 
+## Data producer
+Performance tests make use of the `datagen/datagen.py` python script to generate streams of data using the InfluxDB line protocol, understood by Kapacitor. Run `python datagen/datagen.py -h` to see helpful information about this script.
 
-# Tuning
-Optimized paramters
+Use `datagen/samples/samples.py` script to generate random data to be used in the time series generator.
+* member.sample a list of 50 member IDs with their respective IP address
+* instrument.sample a list of 1000 instruments
 
-## System
-* UDP buffer size monitor
-while(true); do netstat -unlp | grep 8089 ; sleep 1; done
+## Tributes
+The testing framework was largely inspired by https://github.com/mivok/bash_test

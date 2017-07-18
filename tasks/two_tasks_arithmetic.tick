@@ -14,7 +14,7 @@ var tor_out = stream
 tor_out
     |join(ack_out)
         .as('tor_out', 'ack_out')
-        .tolerance(10ms)
+        .tolerance(100ms)
     //Calculate latency
     |eval(lambda: "tor_out.tor_out" - "ack_out.oeg_in")
         // Give the resulting field a name
