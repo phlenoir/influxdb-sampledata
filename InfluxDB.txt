@@ -20,8 +20,7 @@ accès sudo Su
 ############
 # Télécharger le zip pour avoir une version portable
 # créer une session de connexion ssh vers la machine relais
-# enregistrer 3 macros pour se loguer en ssh vers les machines de la QA
-# dupliquer la session de connexion 3 fois en faisant jouer une des 3 macros
+
 
 ########
 # CNTLM
@@ -42,4 +41,3 @@ git config --global http.proxy http://127.0.0.1:3128
 # Télécharger le zip pour avoir une version portable
 # Configurer Atom avec le proxy cntlm
  ./apm config set https-proxy http://127.0.0.1:3128
- 
