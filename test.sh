@@ -22,7 +22,7 @@ load_list() {
     TEST_MENU_ENTRY=("${TEST_MENU_ENTRY[@]}" "${short}")
     TEST_NAME=("${TEST_NAME[@]}" "${s}")
     while read line_in_file; do
-        [[ $line =~ TEST_SUITE_NAME= ]] && TEST_DESCR=("${TEST_DESCR[@]}" "${line_in_file##*=}") && break
+        [[ $line_in_file =~ TEST_SUITE_NAME= ]] && TEST_DESCR=("${TEST_DESCR[@]}" "${line_in_file##*=}") && break
     done < $i
   done
 }
@@ -42,8 +42,9 @@ while myread line;do
       * )
         for ((i = 0; i < ${#TEST_MENU_ENTRY[@]}; i++)); do
           if [[ ${TEST_MENU_ENTRY[$i]} = $line ]]; then
-              ./${TEST_NAME[$i]}
-              break
+            paste -d ' ' <(printf "Running '%s'\n" "${TEST_NAME[$i]}") <(printf "%s\n" "${TEST_DESCR[$i]}")
+            ./${TEST_NAME[$i]}
+            break
           fi
         done
         if [[ $i = ${#TEST_MENU_ENTRY[@]} ]]; then

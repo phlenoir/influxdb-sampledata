@@ -16,7 +16,7 @@ import sys
 import os
 import ast
 
-UTCOFFSET = 0 #3600*2
+UTCOFFSET = 3600*2 # UTCOFFSET not needed if target node is on zulu time
 USER = 'admin'
 PASSWORD = 'admin'
 DBNAME = 'trading'
@@ -48,7 +48,6 @@ def get_time_ns():
     global nano
     nano += random.randint(1, 99999)
     #print("nano: %d" % nano)
-    # UTCOFFSET not needed if target node is on zulu time
     elapse = time.mktime(now.timetuple()) + UTCOFFSET + now.microsecond / 1E6
     return int(elapse * 1E9 + nano)
 
@@ -78,10 +77,11 @@ Sample data: generate pseudo trading data with nano-second precision timestamps
   - each transit time collection makes a time series
 '''
 def main(host='localhost', port=8089, max_time=10, rate=1000, sampling=10):
-    # we have 2 points of measure
-    nb_points = 2
-    # no less than 100 points between 2 commits
-    sliced = max(100, int(rate / (sampling*nb_points)))
+
+    slice_time = 1/sampling
+    slice_points = rate/sampling
+    # total points sent
+    total_points = 0
 
     # Create a UDP socket
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -94,9 +94,10 @@ def main(host='localhost', port=8089, max_time=10, rate=1000, sampling=10):
     torpoints=dict()
     while (time.time() - start_time) < max_time:
         this_time = time.time()
-        this_count = 0
+        period_count = 0
         while 1:
-            for i in range(0, sliced):
+            # no less than 1000 points between time checks
+            for i in range(0, 1000):
                 tags = random.choice(member)
                 tags.update( random.choice(instrument) )
                 tags['oid'] = "order-%d" % uuid.uuid1()
@@ -112,24 +113,23 @@ def main(host='localhost', port=8089, max_time=10, rate=1000, sampling=10):
 
                 create_point("oeg.ack-out.sample", tags, ackpoints, server_address, sock)
                 create_point("oeg.tor-out.sample", tags, torpoints, server_address, sock)
-                this_count +=2
+                total_points +=1
+                period_count +=1
             elapse = time.time() - this_time
-            real_rate = this_count/elapse
-            if (elapse < 1.0):
-                if (this_count >= rate):
-                    time.sleep(1.0-elapse)
-                    print( "{} points in {}s (real rate = {} msg/s)".format( this_count, elapse, real_rate ) )
-                    break
-            else:
-                print( "{} points in {}s (real rate = {} msg/s)".format( this_count, elapse, real_rate ) )
+            if (elapse >= slice_time) :
                 break
-
+            if ( period_count >= slice_points ) :
+                time.sleep(slice_time - elapse)
+                break
+        # reset the nano counter
         global nano
         nano = 0
 
     sock.close()
 
-    print("End of data stream on %s" % sys.platform)
+    print( "End of data stream on %s" % sys.platform)
+    elapse = time.time() - start_time
+    print( "{} points written per series in {}s ({} msg/s)".format( total_points, elapse, total_points/elapse ) )
 
 def parse_args():
     parser = argparse.ArgumentParser(

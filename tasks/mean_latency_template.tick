@@ -19,7 +19,7 @@ stream
         .period(window)
         .every(window)
     |mean(field)
-        .as('value')
+        .as('mean')
     |influxDBOut()
         .database('trading')
         .retentionPolicy('rp_agg')

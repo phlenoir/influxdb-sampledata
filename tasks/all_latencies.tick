@@ -1,0 +1,41 @@
+// Get ack out stream of data
+var latencies = stream
+    |from()
+        .measurement('oeg.ack-out.sample')
+        .groupBy('member', 'instrument')
+    |eval(lambda: "ack_out" - "oeg_in", lambda: "oeg_out" - "oeg_in", lambda: "me_out" - "me_in", lambda: "ack_out" - "ack_in")
+        // Give the resulting field a name
+        .as('order2tick', 'oeg_transit', 'me_transit', 'ack_transit')
+    // now we emit the latencies every second
+    |window()
+        .period(1s)
+        // Emit the current mean per member/instrument every second.
+        .every(1s)
+        // Align the window boundaries to be on the second.
+        .align()
+
+var mean_order2tick = latencies
+    |mean('order2tick')
+      .as('mean')
+
+var mean_oeg_transit = latencies
+    |mean('oeg_transit')
+      .as('mean')
+
+var mean_me_transit = latencies
+    |mean('me_transit')
+      .as('mean')
+
+var mean_ack_transit = latencies
+    |mean('ack_transit')
+      .as('mean')
+
+// join the points back together and store them into InfluxDB
+mean_order2tick
+    |join(mean_oeg_transit, mean_me_transit, mean_ack_transit)
+      .as('order2tick', 'oeg_transit', 'me_transit', 'ack_transit')
+    |influxDBOut()
+        .database('trading')
+        .retentionPolicy('rp_agg')
+        .measurement('oeg.latencies.mean.measure')
+        .precision('ns')

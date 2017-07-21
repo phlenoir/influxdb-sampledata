@@ -1,7 +1,7 @@
 {
     "measurement": {"type" : "string", "value" : "oeg.latency.sample" },
     "groups": {"type": "list", "value": [{"type":"string", "value":"member"},{"type":"string", "value":"segment"},{"type":"string", "value":"partition"}]},
-    "field": {"type" : "string", "value" : "value" },
+    "field": {"type" : "string", "value" : "latency" },
     "window": {"type" : "duration", "value" : "1s" },
     "new_measurement": {"type" : "string", "value" : "oeg.latency.mean.measure" }
 }

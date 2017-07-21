@@ -1,0 +1,29 @@
+// Get ack out stream of data
+var order_to_tick = stream
+    |from()
+        .measurement('oeg.ack-out.sample')
+        .groupBy('member', 'instrument')
+    |eval(lambda: "ack_out" - "oeg_in")
+        // Give the resulting field a name
+        .as('latency')
+
+// now we want statistics about the latency
+var mean_latency = order_to_tick
+    |window()
+        // keep a buffer of the last 10s of data
+        // just in case a member doesn't trade in a while
+        .period(10s)
+        // Emit the current mean per member/instrument every second.
+        .every(1s)
+        // Align the window boundaries to be on the second.
+        .align()
+    |mean('latency')
+      .as('mean_latency')
+
+// store the statistics into InfluxDB
+mean_latency
+    |influxDBOut()
+        .database('trading')
+        .retentionPolicy('rp_agg')
+        .measurement('oeg.latency.mean.measure')
+        .precision('ns')
