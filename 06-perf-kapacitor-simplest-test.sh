@@ -4,7 +4,7 @@
 . ./testlib.sh
 . ./test_setup.sh
 
-TEST_SUITE_NAME="simplest task (60s)"
+TEST_SUITE_NAME="kapacitor simplest task (udp)"
 
 # Number of tests
 TOTAL_TESTS=4
@@ -16,13 +16,15 @@ assert_ran_ok "define simplest"
 ${KAPACITOR_BIN} ${KAPACITOR_OPT} enable simplest
 assert_ran_ok "enable simplest"
 #
-${DATAGEN} --host ${KAPACITOR_HOSTIP} --port 9100 --sec 60 --sampling 1
+${STARTGEN} -c ${OF_PREFIX}.yaml
+sleep 30
+${STOPGEN}
 assert_ran_ok "Push data to Kapacitor, then Kapacitor sends these data to Influxdb"
-
+#
 ${KAPACITOR_BIN} ${KAPACITOR_OPT} show simplest
 assert_ran_ok "show simplest (see log file)"
-
+#
 # TODO clear data
-
+#
 # Print results
 report

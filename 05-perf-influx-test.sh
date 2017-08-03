@@ -4,7 +4,7 @@
 . ./testlib.sh
 . ./test_setup.sh
 
-TEST_SUITE_NAME="Push data directly to InfluxDB (60s)"
+TEST_SUITE_NAME="Push data directly to InfluxDB (http)"
 
 # Number of tests
 TOTAL_TESTS=3
@@ -12,8 +12,10 @@ TOTAL_TESTS=3
 OF_PREFIX="${0%.sh}"
 
 #
-${DATAGEN} --host ${INFLUXDB_HOSTIP} --port 8089 --sec 60 --rate 5000 --sampling 10
-assert_ran_ok "Push data directly to InfluxDB"
+${STARTGEN} -c ${OF_PREFIX}.yaml
+sleep 30
+${STOPGEN}
+assert_ran_ok "Push data directly to InfluxDB (http)"
 #
 echo "###################################################################################################"
 echo "# Check InfluxDB parameters in etc/influxdb/infludb.conf !!!"
@@ -30,7 +32,8 @@ assert_ran_ok "count(*) oeg.ack-out.sample (see log file)"
 #
 curl -i -XPOST ${INFLUXDB_URL}/query?pretty=true --data-urlencode 'q=SELECT count(*) from "trading"."rp_unit"."oeg.tor-out.sample"'
 assert_ran_ok "count(*) oeg.oeg.tor-out.sample (see log file)"
+#
 # TODO clear data
-
+#
 # Print results
 report

@@ -30,6 +30,7 @@ accès sudo Su
 cntlm -H -d OAD -u plenoir
 # Démarrer
 cntlm -c "C:\Users\plenoir\Desktop\cntlm-0.92.3\cntlm.ini"
+/cygdrive/i/cntlm-0.92.3/cntlm.exe /cygdrive/c/Users/plenoir/Desktop/cntlm-0.92.3/cntlm.ini
 ./cntlm.exe -c cntlm.ini
 
 # Configurer git pour passer par le proxy cntlm
@@ -41,3 +42,11 @@ git config --global http.proxy http://127.0.0.1:3128
 # Télécharger le zip pour avoir une version portable
 # Configurer Atom avec le proxy cntlm
  ./apm config set https-proxy http://127.0.0.1:3128
+
+########
+# PIP behind a proxy with CNTLM
+########
+python -m pip install --proxy=127.0.0.1:3128 -U pip
+# install python libs in local dir
+python -m pip install --proxy=127.0.0.1:3128 --prefix=. influxdb
+python -m pip install --proxy=127.0.0.1:3128 --prefix=. pyyaml

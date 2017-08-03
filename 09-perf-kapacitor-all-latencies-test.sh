@@ -21,7 +21,9 @@ echo "##########################################################################
 ${KAPACITOR_BIN} ${KAPACITOR_OPT} enable all_latencies
 assert_ran_ok "enable all_latencies"
 echo "###################################################################################################"
-${DATAGEN} --host ${KAPACITOR_HOSTIP} --port 9100 --sec 7200 --sampling 1
+${STARTGEN} -c ${OF_PREFIX}.yaml
+sleep 7200
+${STOPGEN}
 assert_ran_ok "Push data to Kapacitor"
 echo "###################################################################################################"
 echo "${KAPACITOR_BIN} ${KAPACITOR_OPT} show all_latencies"

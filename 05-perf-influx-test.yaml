@@ -1,0 +1,10 @@
+influxdb:
+    'host': '172.26.160.10'
+    'port': 8086
+    'user': 'admin'
+    'password': 'admin'
+    'dbname': 'trading'
+    'use_udp': False
+    'retention_policy': 'rp_unit'
+    'time_precision': 'ns'
+'buffer_size': 1000

@@ -4,7 +4,7 @@
 . ./testlib.sh
 . ./test_setup.sh
 
-TEST_SUITE_NAME="two_tasks_arithmetic (60s)"
+TEST_SUITE_NAME="two_tasks_arithmetic (30s)"
 
 # Number of tests
 TOTAL_TESTS=5
@@ -17,7 +17,9 @@ echo "##########################################################################
 ${KAPACITOR_BIN} ${KAPACITOR_OPT} enable two_tasks_arithmetic
 assert_ran_ok "enable two_tasks_arithmetic"
 echo "###################################################################################################"
-${DATAGEN} --host ${KAPACITOR_HOSTIP} --port 9100 --sec 60 --sampling 1
+${STARTGEN} -c ${OF_PREFIX}.yaml
+sleep 30
+${STOPGEN}
 assert_ran_ok "Push data to Kapacitor, then Kapacitor sends these data to Influxdb"
 echo "###################################################################################################"
 echo "# Check InfluxDB parameters in etc/influxdb/infludb.conf !!!"
