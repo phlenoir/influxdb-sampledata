@@ -52,6 +52,6 @@ ${KAPACITOR_BIN} ${KAPACITOR_OPT} delete tasks mean_latency
 assert_ran_ok "delete tasks mean_latency"
 ${KAPACITOR_BIN} ${KAPACITOR_OPT} delete tasks mean_latency_1
 assert_ran_ok "delete mean_latency_1"
-$
+
 # Print results
 report

@@ -50,3 +50,14 @@ python -m pip install --proxy=127.0.0.1:3128 -U pip
 # install python libs in local dir
 python -m pip install --proxy=127.0.0.1:3128 --prefix=. influxdb
 python -m pip install --proxy=127.0.0.1:3128 --prefix=. pyyaml
+
+# udp server in python
+import socket
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+sock.bind(('0.0.0.0', 9100))
+sock.settimeout(10)
+sock.recv(1024)
+
+# tcpdump
+sudo tcpdump port 9100 and udp -i bond1.951
