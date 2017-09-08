@@ -4,7 +4,7 @@
 . ./testlib.sh
 . ./test_setup.sh
 
-TEST_SUITE_NAME="Push data directly to InfluxDB (http)"
+TEST_SUITE_NAME="Push data directly to InfluxDB"
 
 # Number of tests
 TOTAL_TESTS=3
@@ -15,7 +15,7 @@ OF_PREFIX="${0%.sh}"
 ${STARTGEN} -c ${OF_PREFIX}.yaml
 sleep 30
 ${STOPGEN}
-assert_ran_ok "Push data directly to InfluxDB (http)"
+assert_ran_ok "Push data directly to InfluxDB"
 #
 echo "###################################################################################################"
 echo "# Check InfluxDB parameters in etc/influxdb/infludb.conf !!!"

@@ -11,21 +11,21 @@ TOTAL_TESTS=18
 
 ${KAPACITOR_BIN} ${KAPACITOR_OPT} delete tasks simplest
 assert_ran_ok "delete simplest"
-${KAPACITOR_BIN} ${KAPACITOR_OPT} define simplest -tick ${KAPACITOR_TICKDIR}/simplest.tick -type stream -dbrp trading.rp_unit
+${KAPACITOR_BIN} ${KAPACITOR_OPT} define 06_perf_simplest -tick ${KAPACITOR_TICKDIR}/06_perf_simplest.tick -type stream -dbrp trading.rp_unit
 assert_ran_ok "define simplest"
 ${KAPACITOR_BIN} ${KAPACITOR_OPT} enable simplest
 assert_ran_ok "enable simplest"
 
 ${KAPACITOR_BIN} ${KAPACITOR_OPT} delete tasks two_tasks_arithmetic
 assert_ran_ok "delete simplest"
-${KAPACITOR_BIN} ${KAPACITOR_OPT} define two_tasks_arithmetic -tick ${KAPACITOR_TICKDIR}/two_tasks_arithmetic.tick -type stream -dbrp trading.rp_unit
+${KAPACITOR_BIN} ${KAPACITOR_OPT} define 07_perf_join -tick ${KAPACITOR_TICKDIR}/07_perf_join.tick -type stream -dbrp trading.rp_unit
 assert_ran_ok "define two_tasks_arithmetic"
 ${KAPACITOR_BIN} ${KAPACITOR_OPT} enable two_tasks_arithmetic
 assert_ran_ok "enable two_tasks_arithmetic"
 
 ${KAPACITOR_BIN} ${KAPACITOR_OPT} delete tasks mean_latency
 assert_ran_ok "delete mean_latency"
-${KAPACITOR_BIN} ${KAPACITOR_OPT} define mean_latency -tick ${KAPACITOR_TICKDIR}/mean_latency.tick -type stream -dbrp trading.rp_unit
+${KAPACITOR_BIN} ${KAPACITOR_OPT} define 08_perf_mean_latency -tick ${KAPACITOR_TICKDIR}/08_perf_mean_latency.tick -type stream -dbrp trading.rp_unit
 assert_ran_ok "define mean_latency"
 ${KAPACITOR_BIN} ${KAPACITOR_OPT} enable mean_latency
 assert_ran_ok "enable mean_latency"

@@ -11,11 +11,11 @@ TOTAL_TESTS=5
 
 OF_PREFIX="${0%.sh}"
 
-${KAPACITOR_BIN} ${KAPACITOR_OPT} define two_tasks_arithmetic -tick ${KAPACITOR_TICKDIR}/two_tasks_arithmetic.tick -type stream -dbrp trading.rp_unit
-assert_ran_ok "define two_tasks_arithmetic"
+${KAPACITOR_BIN} ${KAPACITOR_OPT} define 07_perf_join -tick ${KAPACITOR_TICKDIR}/07_perf_join.tick -type stream -dbrp trading.rp_unit
+assert_ran_ok "define 07_perf_join"
 echo "###################################################################################################"
-${KAPACITOR_BIN} ${KAPACITOR_OPT} enable two_tasks_arithmetic
-assert_ran_ok "enable two_tasks_arithmetic"
+${KAPACITOR_BIN} ${KAPACITOR_OPT} enable 07_perf_join
+assert_ran_ok "enable 07_perf_join"
 echo "###################################################################################################"
 ${STARTGEN} -c ${OF_PREFIX}.yaml
 sleep 30
@@ -25,8 +25,8 @@ echo "##########################################################################
 echo "# Check InfluxDB parameters in etc/influxdb/infludb.conf !!!"
 echo "# max-series-per-database = 1000000"
 echo "# -------------------------------------------------------------------------------------------------"
-echo "${KAPACITOR_BIN} ${KAPACITOR_OPT} show two_tasks_arithmetic"
-${KAPACITOR_BIN} ${KAPACITOR_OPT} show two_tasks_arithmetic
+echo "${KAPACITOR_BIN} ${KAPACITOR_OPT} show 07_perf_join"
+${KAPACITOR_BIN} ${KAPACITOR_OPT} show 07_perf_join
 assert_ran_ok "show two_tasks_arithmetic (see log file)"
 echo "###################################################################################################"
 echo "curl -i -XPOST ${INFLUXDB_URL}/query?pretty=true --data-urlencode 'q=SELECT count(*) from \"trading\".\"rp_unit\".\"oeg.latency.sample\"'"
