@@ -5,6 +5,7 @@ export BASEDIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export DATAGEN="python ${BASEDIR}/datagen/datagen.py"
 export STARTGEN="${BASEDIR}/start_gen.bash"
 export STOPGEN="${BASEDIR}/stop_gen.bash"
+export INFLUXSTRESS="${BASEDIR}/influx-stress"
 # Don't use dnsname in python script or the DNS server will be pinged for EVERY request sent
 export INFLUXDB_HOSTIP=172.26.160.10
 export KAPACITOR_HOSTIP=172.26.160.11
