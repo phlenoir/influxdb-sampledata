@@ -1,0 +1,34 @@
+// Get a stream of data
+var nfr = stream
+    |from()
+        .database('stress')
+        .retentionPolicy('rp_stress')
+        .measurement('test_11_input')
+        .groupBy(*)
+
+// now we want statistics about the latency
+var emitter = nfr
+    |window()
+        .period(1s)
+        // Emit the current mean per member/instrument every second.
+        .every(1s)
+        // Align the window boundaries to be on the second.
+        .align()
+
+var mean_latency = emitter
+    |mean('latNs')
+      .as('latNs')
+
+var p50_latency = emitter
+    |percentile('latNs', 50.0)
+      .as('latNs')
+
+// join the points back together and store them into InfluxDB
+mean_latency
+    |join(p50_latency)
+      .as('mean', 'p50')
+    |influxDBOut()
+        .database('stress')
+        .retentionPolicy('rp_stress')
+        .measurement('test_11')
+        .precision('ns')

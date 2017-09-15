@@ -1,3 +1,3 @@
 #!/bin/bash
-rm *.log
-rm *.out
+rm -f *.log
+rm -f *.out

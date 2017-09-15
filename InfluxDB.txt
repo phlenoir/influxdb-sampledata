@@ -61,3 +61,15 @@ sock.recv(1024)
 
 # tcpdump
 sudo tcpdump port 9100 and udp -i bond1.951
+
+###########
+# pcap2inf
+###########
+mkdir idbVolumes
+cd idbVolumes/
+chmod +x pcap2inf
+chmod +x mdg2indb
+chmod +x libboost_program_options.so.1.53.0 liblog4cplus-1.1.so.9
+export LD_LIBRARY_PATH=./
+sudo yum install lz4
+./pcap2inf -logfile "" -dbip 127.0.0.1 -dbport 8086 -dbname mdg -dbuser optiq -dbpwd optiq -in out.pcap  -blocksize 32000

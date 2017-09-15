@@ -6,6 +6,9 @@ export DATAGEN="python ${BASEDIR}/datagen/datagen.py"
 export STARTGEN="${BASEDIR}/start_gen.bash"
 export STOPGEN="${BASEDIR}/stop_gen.bash"
 export INFLUXSTRESS="${BASEDIR}/influx-stress"
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${BASEDIR}/pcap2inf
+export PCAP2INF="${BASEDIR}/pcap2inf/pcap2inf"
+
 # Don't use dnsname in python script or the DNS server will be pinged for EVERY request sent
 export INFLUXDB_HOSTIP=172.26.160.10
 export KAPACITOR_HOSTIP=172.26.160.11
