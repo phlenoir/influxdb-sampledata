@@ -59,8 +59,17 @@ sock.bind(('0.0.0.0', 9100))
 sock.settimeout(10)
 sock.recv(1024)
 
+###########
 # tcpdump
+###########
 sudo tcpdump port 9100 and udp -i bond1.951
+# voir le contenu des trames avec -A
+sudo tcpdump port 9092 and tcp -i bond1.951 -A
+# voir le ce qui provient de et est à destination de
+sudo tcpdump port 8086 and tcp and dst host qpdpecon24103-int and src host qpdpecon24101-int -i bond1.951 -A
+sudo tcpdump port 8086 and tcp and dst host qpdpecon24101-int and src host qpdpecon24102-int -i bond1.951 -A
+sudo tcpdump port 9092 and tcp and dst host qpdpecon24101-int -i bond1.951 -A 
+
 
 ###########
 # pcap2inf
@@ -73,3 +82,38 @@ chmod +x libboost_program_options.so.1.53.0 liblog4cplus-1.1.so.9
 export LD_LIBRARY_PATH=./
 sudo yum install lz4
 ./pcap2inf -logfile "" -dbip 127.0.0.1 -dbport 8086 -dbname mdg -dbuser optiq -dbpwd optiq -in out.pcap  -blocksize 32000
+
+
+# count the number of series
+influx -database 'pcap' -format 'csv' -execute 'SHOW SERIES' | grep -v "name,_id,host" | wc -l
+influx -database 'optiq' -format 'csv' -execute 'SHOW SERIES' | grep -v "name,_id,host" | wc -l
+
+# check Kapacitor task
+$KAPACITOR_BIN -url $KAPACITOR_URL list tasks
+$KAPACITOR_BIN -url $KAPACITOR_URL show <task>
+
+# InfluxDB Diagnostic
+show stats
+show diagnostics
+influx_inspect dumptsm <path/to/tsm/file>
+
+# Linux diag
+dmesg : read all messages from kernel ring buffer
+
+# Insert one line
+curl -i -XPOST 'http://localhost:8086/write?db=ple' --data-binary 'test,host=server01,region=us-west value=0.65'
+curl -i -XPOST 'http://localhost:8086/write?db=ple' --data-binary 'test,host=server01,region=us-west value=0.66'
+curl -i -XPOST 'http://localhost:8086/write?db=ple' --data-binary 'test,host=server01,region=us-west value=0.67'
+curl -i -XPOST 'http://localhost:8086/write?db=ple' --data-binary 'test,host=server01,region=us-west value=0.68'
+curl -i -XPOST 'http://localhost:8086/write?db=ple' --data-binary 'test,host=server01,region=us-west value=0.69'
+
+${KAPACITOR_BIN} -url 'http://qpdpecon24101-int:9092' delete tasks ple_test
+${KAPACITOR_BIN} -url 'http://qpdpecon24101-int:9092' define ple_test -tick ${KAPACITOR_TICKDIR}/ple_test.tick -type stream -dbrp ple.autogen
+${KAPACITOR_BIN} -url 'http://qpdpecon24101-int:9092' enable ple_test
+
+
+curl -i -XPOST 'http://localhost:9092/write?db=ple' --data-binary 'test,host=server01,region=us-west value=0.65'
+curl -i -XPOST 'http://localhost:9092/write?db=ple' --data-binary 'test,host=server01,region=us-west value=0.66'
+curl -i -XPOST 'http://localhost:9092/write?db=ple' --data-binary 'test,host=server01,region=us-west value=0.67'
+curl -i -XPOST 'http://localhost:9092/write?db=ple' --data-binary 'test,host=server01,region=us-west value=0.68'
+curl -i -XPOST 'http://localhost:9092/write?db=ple' --data-binary 'test,host=server01,region=us-west value=0.69'

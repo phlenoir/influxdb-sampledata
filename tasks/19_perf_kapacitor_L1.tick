@@ -1,0 +1,23 @@
+// Get a stream of data twice
+var data1 = stream
+    |from()
+        .database('pcap')
+        .measurement('in_orders')
+
+var data2 = stream
+    |from()
+        .database('pcap')
+        .measurement('in_orders')
+
+// Send it to the distributed Kapacitor instances
+data1
+    |influxDBOut()
+      .cluster('instance_one')
+      .database('pcap')
+      .measurement('in_orders')
+
+data2
+    |influxDBOut()
+      .cluster('instance_two')
+      .database('pcap')
+      .measurement('in_orders')

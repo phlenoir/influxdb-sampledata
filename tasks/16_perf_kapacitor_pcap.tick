@@ -1,0 +1,12 @@
+// Get a stream of data
+var incomming_data = stream
+    |from()
+        .database('pcap')
+        .measurement('bytes')
+        .groupBy('channel')
+
+// Send it to InfluxDB
+incomming_data
+    |influxDBOut()
+        .database('pcap')
+        .measurement('bytes')

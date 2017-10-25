@@ -1,5 +1,17 @@
 // Get ack out stream of data
-var latencies = stream
+var incomming = stream
+    |from()
+        .measurement('oeg.ack-out.sample')
+
+incomming
+    |stats(10s)
+      .align()
+    |influxDBOut()
+        .database('trading')
+        .measurement('_kapacitor')
+        .precision('s')
+
+var latencies = incomming
     |from()
         .measurement('oeg.ack-out.sample')
         .groupBy('member', 'instrument')

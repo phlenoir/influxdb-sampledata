@@ -1,9 +1,9 @@
 #!/bin/bash
 #set -x
-export BASENAME=influxd 
+export BASENAME=influxd
 export BASEDIR="$(cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 export pidfile=${BASEDIR}/${BASENAME}.pid
- 
+
 function log() {
     printf "%.23s %s[%s]: %s\n" $(date +%F.%T.%N) ${BASH_SOURCE[1]##*/} ${BASH_LINENO[0]} "${@}";
 }
@@ -16,7 +16,7 @@ if [ ! "$pid" ]; then
 fi
 
 if ! kill $pid > /dev/null 2>&1; then
-    log "Could not send SIGTERM to process $pid" 
+    log "Could not send SIGTERM to process $pid"
 fi
 
 MS=1000
@@ -36,4 +36,3 @@ if [ -f $pidfile ]
 then
     rm -f $pidfile
 fi
-

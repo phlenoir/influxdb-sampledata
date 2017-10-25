@@ -1,0 +1,56 @@
+// Get data
+var incomming_orders = stream
+    |from()
+        .database('pcap')
+        .measurement('orders')
+        .groupBy('channel', 'action')
+
+// compute statistics about the latency every ms
+var emitter = incomming_orders
+    |window()
+        .period(1ms)
+        // Emit the current stats every ms
+        .every(1ms)
+        // Align the window boundaries
+        .align()
+
+var mean_latency = emitter
+    |mean('latency')
+      .as('latency')
+
+var p50_latency = emitter
+    |percentile('latency', 50.0)
+      .as('latency')
+
+var p90_latency = emitter
+    |percentile('latency', 90.0)
+      .as('latency')
+
+var p99_latency = emitter
+    |percentile('latency', 99.0)
+      .as('latency')
+
+var min_latency = emitter
+    |min('latency')
+      .as('latency')
+
+var max_latency = emitter
+    |max('latency')
+      .as('latency')
+
+var count_latency = emitter
+    |count('latency')
+      .as('latency')
+
+var sum_latency = emitter
+    |sum('latency')
+      .as('latency')
+
+// join the points back together and store them into InfluxDB
+mean_latency
+    |join(p50_latency, p90_latency, p99_latency, min_latency, max_latency, count_latency, sum_latency)
+      .as('mean', 'p50', 'p90', 'p99', 'min', 'max', 'count', 'sum')
+    |influxDBOut()
+        .database('pcap')
+        .measurement('orders')
+        .precision('ns')

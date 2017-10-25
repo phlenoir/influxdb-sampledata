@@ -1,0 +1,27 @@
+// Get a stream of data
+var data1 = stream
+    |from()
+        .database('pcap')
+        .measurement('order')
+
+var data2 = stream
+    |from()
+        .database('pcap')
+        .measurement('order')
+
+// Send it to InfluxDB
+data1
+    |delete()
+      .tag('symbol')
+    |influxDBOut()
+      .cluster('instance_one')
+      .database('optiq')
+      .measurement('orders')
+
+data2
+    |delete()
+      .tag('symbol')
+    |influxDBOut()
+      .cluster('instance_two')
+      .database('optiq')
+      .measurement('orders')
