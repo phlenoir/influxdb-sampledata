@@ -1,0 +1,63 @@
+var input = stream
+    |from()
+        .database('oeg')
+        .measurement('ack')
+        .retentionPolicy('')
+    |default()
+        .field('book_out', 0)
+        .field('book_in', 0)
+    |where(lambda: ("book_out" != 0) AND ("book_in" != 0))
+    // Compute latencies and add it into a new field
+    |eval(lambda: "book_out" - "book_in")
+        .as('latency')
+    |groupBy(*)
+    |window()
+        .period(1ms)
+        // Emit the current stats every ms
+        .every(1ms)
+        // Align the window boundaries
+        .align()
+
+var count_latency = input
+    |count('latency')
+        .as('latency')
+
+var mean_latency = input
+    |mean('latency')
+        .as('latency')
+
+var p50_latency = input
+    |percentile('latency', 50.0)
+        .as('latency')
+
+var p90_latency = input
+    |percentile('latency', 90.0)
+        .as('latency')
+
+var p99_latency = input
+    |percentile('latency', 99.0)
+        .as('latency')
+
+var min_latency = input
+    |min('latency')
+        .as('latency')
+
+var max_latency = input
+    |max('latency')
+        .as('latency')
+
+var sum_latency = input
+    |sum('latency')
+        .as('latency')
+
+// join the points back together
+var orderstats = count_latency
+    |join(mean_latency, p50_latency, p90_latency, p99_latency, min_latency, max_latency, sum_latency)
+        .as('count', 'mean', 'p50', 'p90', 'p99', 'min', 'max', 'sum')
+
+orderstats
+    |influxDBOut()
+        .cluster('instance_1')
+        .database('oeg')
+        .measurement('book')
+        .retentionPolicy('rp_long')

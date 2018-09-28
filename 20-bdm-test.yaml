@@ -1,0 +1,15 @@
+generator:
+    'reader': 'reader.bdmreq_reader'
+influxdb:
+    'host': '172.26.160.9'
+    'port': 8086
+    'user': 'admin'
+    'password': 'admin'
+    'dbname': 'bdm'
+    'use_udp': False
+    'retention_policy': 'autogen'
+    'time_precision': 'us'
+source:
+    'dir': '/home/OAD/plenoir/influxdb-sampledata/toload'
+
+
