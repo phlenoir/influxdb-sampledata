@@ -69,7 +69,7 @@ sudo tcpdump port 9092 and tcp -i bond1.951 -A
 sudo tcpdump port 8086 and tcp and dst host qpdpecon24103-int and src host qpdpecon24101-int -i bond1.951 -A
 sudo tcpdump port 8086 and tcp and dst host qpdpecon24101-int and src host qpdpecon24102-int -i bond1.951 -A
 sudo tcpdump port 9092 and tcp and dst host qpdpecon24101-int -i bond1.951 -A 
-
+sudo /usr/sbin/tcpdump port 8000 and tcp -X -s 0
 
 ###########
 # pcap2inf
