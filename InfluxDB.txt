@@ -36,6 +36,25 @@ cntlm -c "C:\Users\plenoir\Desktop\cntlm-0.92.3\cntlm.ini"
 # Configurer git pour passer par le proxy cntlm
 git config --global http.proxy http://127.0.0.1:3128
 
+## editer la conf git pour changer le protocole ssh en https
+git config --global -e
+
+[core]
+	editor = 'C:\\Users\\PPLR01191\\AppData\\Local\\Programs\\Microsoft VS Code\\Code.exe' --wait
+
+[http]
+	proxy = http://127.0.0.1:3128
+
+[https]
+	proxy = http://127.0.0.1:3128
+
+[url "https://"]
+	insteadOf = git://
+
+[user]
+	email = philippe.lenoir@prologism.fr
+	name = Philippe Lenoir
+ 
 ########
 # ATOM
 ########
